@@ -1,0 +1,21 @@
+# Autofocus System Requirements
+# =============================
+
+# Core scientific computing
+numpy>=1.21.0
+scipy>=1.7.0
+
+# Computer vision
+opencv-python>=4.5.0
+
+# Visualization
+matplotlib>=3.5.0
+
+# Optional: For enhanced performance
+# numba>=0.56.0  # JIT compilation for faster block matching
+# cupy>=10.0.0   # GPU acceleration (requires CUDA)
+
+# Development and testing (optional)
+# pytest>=6.0.0
+# jupyter>=1.0.0
+# ipykernel>=6.0.0
