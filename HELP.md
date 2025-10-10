@@ -3,6 +3,9 @@
 ## 🚀 Quick Start Commands
 
 ### Setup (First Time Only)
+
+**Note**: This project uses a virtual environment located in the parent directory at `../virtual_env`
+
 ```bash
 # Linux/Mac
 chmod +x setup.sh
@@ -21,11 +24,11 @@ setup.bat
 run_demo.bat
 
 # Direct Python Execution
-source af_env/bin/activate  # Activate environment
-python simple_example.py    # Educational demo
-python autofocus_system.py  # Full system demo
-python af_calibration.py    # Testing demo
-python af_visualization.py  # Visualization demo
+source ../virtual_env/bin/activate  # Activate environment
+python simple_example.py            # Educational demo
+python autofocus_system.py          # Full system demo
+python af_calibration.py            # Testing demo
+python af_visualization.py          # Visualization demo
 ```
 
 ### Quick Test
@@ -87,16 +90,19 @@ python quick_start.py
 ### Activate Virtual Environment
 ```bash
 # Linux/Mac
-source af_env/bin/activate
+source ../virtual_env/bin/activate
 
 # Windows
-af_env\Scripts\activate.bat
+..\virtual_env\Scripts\activate
 ```
 
 ### Deactivate Virtual Environment
 ```bash
 deactivate
 ```
+
+### Virtual Environment Location
+The virtual environment is located in the parent directory: `../virtual_env/`
 
 ### Check Dependencies
 ```bash

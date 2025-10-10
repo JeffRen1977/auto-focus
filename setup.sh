@@ -2,8 +2,8 @@
 
 # Autofocus System Setup Script
 # =============================
-# This script sets up a virtual environment and installs all dependencies
-# for the autofocus system.
+# This script installs dependencies into an existing virtual environment
+# located in the parent directory (../virutal_ven)
 
 set -e  # Exit on any error
 
@@ -21,26 +21,23 @@ fi
 PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
 echo "✅ Python $PYTHON_VERSION detected"
 
-# Check if virtualenv is available
-if ! command -v virtualenv &> /dev/null; then
-    echo "📦 Installing virtualenv..."
-    pip3 install virtualenv
+# Virtual environment path (in parent directory)
+VENV_PATH="../virtual_env"
+
+# Check if virtual environment exists
+if [ ! -d "$VENV_PATH" ]; then
+    echo "❌ Virtual environment not found at $VENV_PATH"
+    echo "Please create it first with:"
+    echo "   cd .."
+    echo "   python3 -m venv virtual_env"
+    exit 1
 fi
 
-# Create virtual environment
-VENV_NAME="af_env"
-echo "🔧 Creating virtual environment: $VENV_NAME"
-
-if [ -d "$VENV_NAME" ]; then
-    echo "⚠️  Virtual environment already exists. Removing it..."
-    rm -rf "$VENV_NAME"
-fi
-
-python3 -m venv "$VENV_NAME"
+echo "✅ Found virtual environment at $VENV_PATH"
 
 # Activate virtual environment
 echo "🚀 Activating virtual environment..."
-source "$VENV_NAME/bin/activate"
+source "$VENV_PATH/bin/activate"
 
 # Upgrade pip
 echo "⬆️  Upgrading pip..."
@@ -68,12 +65,13 @@ echo ""
 echo "🎉 Setup completed successfully!"
 echo ""
 echo "To activate the virtual environment, run:"
-echo "   source $VENV_NAME/bin/activate"
+echo "   source ../virtual_env/bin/activate"
 echo ""
 echo "To deactivate, run:"
 echo "   deactivate"
 echo ""
 echo "To run the autofocus system:"
+echo "   source ../virtual_env/bin/activate"
 echo "   python autofocus_system.py"
 echo "   python simple_example.py"
 echo "   python af_calibration.py"

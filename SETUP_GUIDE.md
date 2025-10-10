@@ -2,26 +2,48 @@
 
 This guide will help you set up and run the autofocus system in a virtual environment.
 
+## 📂 Project Structure
+
+The autofocus system uses a virtual environment located in the **parent directory**:
+
+```
+Mobile_Computational_photograph/
+├── virtual_env/              # Virtual environment (parent directory)
+└── Autofocus/                # Autofocus system (current directory)
+    ├── autofocus_system.py
+    ├── simple_example.py
+    ├── setup.sh
+    └── ...
+```
+
 ## 🚀 Quick Setup (Recommended)
 
-### Step 1: Make Scripts Executable
+### Step 1: Verify Virtual Environment
+The virtual environment should already exist at `../virtual_env`. If not, create it:
+```bash
+cd ..
+python3 -m venv virtual_env
+cd Autofocus
+```
+
+### Step 2: Make Scripts Executable
 ```bash
 chmod +x setup.sh
 chmod +x run_demo.sh
 ```
 
-### Step 2: Run Setup Script
+### Step 3: Run Setup Script
 ```bash
 ./setup.sh
 ```
 
 This script will:
 - ✅ Check Python 3 installation
-- 🔧 Create virtual environment (`af_env`)
+- ✅ Verify virtual environment exists at `../virtual_env`
 - 📦 Install all dependencies
 - 🔍 Verify installation
 
-### Step 3: Run Demos
+### Step 4: Run Demos
 ```bash
 ./run_demo.sh
 ```
@@ -33,16 +55,15 @@ If you prefer manual setup or encounter issues with the automated script:
 ### Prerequisites
 - Python 3.7 or higher
 - pip package manager
+- Virtual environment at `../virtual_env`
 
-### Step 1: Create Virtual Environment
+### Step 1: Activate Virtual Environment
 ```bash
-# Create virtual environment
-python3 -m venv af_env
+# Activate virtual environment (Linux/Mac)
+source ../virtual_env/bin/activate
 
-# Activate virtual environment
-source af_env/bin/activate  # On Linux/Mac
-# OR
-af_env\Scripts\activate     # On Windows
+# OR on Windows
+..\virtual_env\Scripts\activate
 ```
 
 ### Step 2: Install Dependencies
@@ -64,7 +85,7 @@ python quick_start.py --check-deps
 ### Quick Test
 ```bash
 # Activate virtual environment first
-source af_env/bin/activate
+source ../virtual_env/bin/activate
 
 # Run quick test
 python quick_start.py
@@ -72,6 +93,9 @@ python quick_start.py
 
 ### Individual Demos
 ```bash
+# Make sure virtual environment is activated
+source ../virtual_env/bin/activate
+
 # Educational examples (start here!)
 python simple_example.py
 
@@ -116,10 +140,10 @@ python quick_start.py --help       # Show help
 ### Activating Environment
 ```bash
 # Linux/Mac
-source af_env/bin/activate
+source ../virtual_env/bin/activate
 
 # Windows
-af_env\Scripts\activate
+..\virtual_env\Scripts\activate
 ```
 
 ### Deactivating Environment
@@ -127,9 +151,10 @@ af_env\Scripts\activate
 deactivate
 ```
 
-### Removing Environment
-```bash
-rm -rf af_env
+### Location
+The virtual environment is located in the parent directory:
+```
+../virtual_env/
 ```
 
 ## 📦 Dependencies
@@ -192,10 +217,12 @@ python3 --version
 
 #### 2. Virtual Environment Issues
 ```bash
-# Remove and recreate environment
-rm -rf af_env
-python3 -m venv af_env
-source af_env/bin/activate
+# Recreate environment in parent directory
+cd ..
+rm -rf virtual_env
+python3 -m venv virtual_env
+cd Autofocus
+source ../virtual_env/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```

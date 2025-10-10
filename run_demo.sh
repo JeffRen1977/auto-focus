@@ -3,25 +3,27 @@
 # Autofocus System Demo Runner
 # ============================
 # This script activates the virtual environment and runs demos
+# Uses existing virtual environment in parent directory
 
 set -e  # Exit on any error
 
-VENV_NAME="af_env"
+VENV_PATH="../virtual_env"
 
 echo "=========================================="
 echo "Autofocus System Demo Runner"
 echo "=========================================="
 
 # Check if virtual environment exists
-if [ ! -d "$VENV_NAME" ]; then
-    echo "❌ Virtual environment not found. Please run setup.sh first."
+if [ ! -d "$VENV_PATH" ]; then
+    echo "❌ Virtual environment not found at $VENV_PATH"
+    echo "Please run setup.sh first or create the virtual environment:"
     echo "   ./setup.sh"
     exit 1
 fi
 
 # Activate virtual environment
 echo "🚀 Activating virtual environment..."
-source "$VENV_NAME/bin/activate"
+source "$VENV_PATH/bin/activate"
 
 echo "✅ Virtual environment activated"
 echo ""
