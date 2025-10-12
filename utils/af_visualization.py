@@ -6,6 +6,10 @@ This module provides visualization tools to help understand autofocus concepts,
 including disparity maps, contrast curves, and AF convergence behavior.
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2

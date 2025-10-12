@@ -6,6 +6,10 @@ This module provides calibration utilities for the autofocus system,
 including PDAF calibration, performance testing, and validation tools.
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import numpy as np
 import cv2
 from typing import List, Tuple, Dict, Optional
