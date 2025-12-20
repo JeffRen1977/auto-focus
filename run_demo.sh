@@ -54,10 +54,10 @@ run_demo() {
 # Menu for selecting demos
 while true; do
     echo "Available Demos:"
-    echo "1. Simple Autofocus Demo (Educational)"
-    echo "2. Full Autofocus System Demo"
-    echo "3. Calibration and Testing Demo"
-    echo "4. Visualization Demo"
+    echo "1. Complete Autofocus Example (examples/example_usage.py)"
+    echo "2. Quick Start Validation (examples/quick_start.py)"
+    echo "3. Calibration and Testing (utils/af_calibration.py)"
+    echo "4. Visualization Tools (utils/af_visualization.py)"
     echo "5. Run All Demos"
     echo "6. Exit"
     echo ""
@@ -65,24 +65,24 @@ while true; do
     
     case $choice in
         1)
-            run_demo "simple_example.py" "Simple Autofocus Demo"
+            run_demo "examples/example_usage.py" "Complete Autofocus Example"
             ;;
         2)
-            run_demo "autofocus_system.py" "Full Autofocus System Demo"
+            run_demo "examples/quick_start.py" "Quick Start Validation"
             ;;
         3)
-            run_demo "af_calibration.py" "Calibration and Testing Demo"
+            run_demo "utils/af_calibration.py" "Calibration and Testing Demo"
             ;;
         4)
-            run_demo "af_visualization.py" "Visualization Demo"
+            run_demo "utils/af_visualization.py" "Visualization Demo"
             ;;
         5)
             echo "Running all demos in sequence..."
             echo ""
-            run_demo "simple_example.py" "Simple Autofocus Demo"
-            run_demo "autofocus_system.py" "Full Autofocus System Demo"
-            run_demo "af_calibration.py" "Calibration and Testing Demo"
-            run_demo "af_visualization.py" "Visualization Demo"
+            run_demo "examples/example_usage.py" "Complete Autofocus Example"
+            run_demo "examples/quick_start.py" "Quick Start Validation"
+            run_demo "utils/af_calibration.py" "Calibration and Testing Demo"
+            run_demo "utils/af_visualization.py" "Visualization Demo"
             echo "🎉 All demos completed!"
             break
             ;;

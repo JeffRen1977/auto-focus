@@ -9,6 +9,11 @@ without running the full demos. Perfect for quick testing and validation.
 
 import sys
 import os
+
+# Add parent directory to path to allow imports from the main package
+# This is needed because this script is in the examples/ subdirectory
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -157,14 +162,15 @@ Examples:
     python quick_start.py --test            # Run quick test
 
 Available Demo Scripts:
-    python simple_example.py                 # Educational examples
-    python autofocus_system.py              # Full system demo
-    python af_calibration.py                # Calibration demo
-    python af_visualization.py              # Visualization demo
+    python examples/example_usage.py         # Complete usage examples
+    python examples/quick_start.py          # Quick validation (this script)
+    python utils/af_calibration.py         # Calibration demo
+    python utils/af_visualization.py        # Visualization demo
+    python autofocus_processor.py           # Main processor demo
 
 Setup:
     1. Run setup.sh to create virtual environment
-    2. Activate environment: source af_env/bin/activate
+    2. Activate environment: source ../virtual_env/bin/activate
     3. Run demos with run_demo.sh or directly with python
 """)
 
@@ -195,10 +201,10 @@ def main():
     
     if success:
         print("\n🎯 Next Steps:")
-        print("   1. Run full demo: python autofocus_system.py")
-        print("   2. Try educational examples: python simple_example.py")
-        print("   3. Explore calibrations: python af_calibration.py")
-        print("   4. View visualizations: python af_visualization.py")
+        print("   1. Run complete example: python examples/example_usage.py")
+        print("   2. Try calibration tools: python utils/af_calibration.py")
+        print("   3. View visualizations: python utils/af_visualization.py")
+        print("   4. Run main processor: python autofocus_processor.py")
         print("\n📖 Read README.md for detailed documentation")
     else:
         print("\n🔧 Troubleshooting:")

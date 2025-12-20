@@ -8,7 +8,7 @@ This system implements a complete autofocus pipeline that:
 - **Reads real RAW10 sensor data** (PD and Bayer images)
 - **Processes phase detection pixels** for fast PDAF focusing
 - **Analyzes contrast** for accurate CDAF focusing  
-- **Combines methods** in a hybrid approach for optimal performance
+- **Intelligently selects** between PDAF and CDAF based on confidence thresholds
 - **Works with actual camera sensor data** from mobile devices
 
 ## 🏗️ System Architecture
@@ -23,7 +23,7 @@ Processing Pipeline:
 ├── Raw Data Reader (RAW10 unpacking, PD splitting)
 ├── PDAF Processor (Block matching, disparity calculation)
 ├── CDAF Processor (Contrast analysis, sharpness measurement)
-├── Hybrid AF Controller (Method combination, decision making)
+├── Hybrid AF Controller (Confidence-based method selection)
 └── Results (Focus direction, confidence, lens movement)
 
 Output:
@@ -40,7 +40,7 @@ Autofocus/
 │   └── autofocus_system.py         # Core AF algorithms (PDAF, CDAF, LDAF)
 │
 ├── 📁 examples/
-│   ├── example_usage.py            # Usage examples and demos
+│   ├── example_usage.py            # Comprehensive usage examples with detailed comments
 │   └── quick_start.py              # Quick validation script
 │
 ├── 🔧 utils/
@@ -50,12 +50,6 @@ Autofocus/
 ├── 📊 data/
 │   ├── *.raw                       # RAW10 PD and Bayer images
 │   └── *.jpg                       # Processed output images
-│
-├── 📚 docs/
-│   ├── CLEAN_SYSTEM_README.md      # Clean system documentation
-│   ├── INSTALL.md                  # Installation guide
-│   ├── HELP.md                     # Help and troubleshooting
-│   └── SETUP_GUIDE.md              # Detailed setup instructions
 │
 ├── ⚙️ Setup Files
 │   ├── README.md                   # This file
@@ -163,7 +157,7 @@ processor = AutofocusProcessor()
 pdaf_results = processor.calculate_pdaf(left_pd, right_pd, roi)
 cdaf_results = processor.calculate_cdaf(bayer_image, roi)
 
-# Hybrid combination
+# Hybrid AF with intelligent method selection
 hybrid_results = processor.calculate_hybrid_af(
     left_pd, right_pd, bayer_image, roi
 )
@@ -177,8 +171,17 @@ complete_results = processor.process_complete_af(
 **Key Features:**
 - ✅ PDAF: Block matching, disparity calculation, defocus estimation
 - ✅ CDAF: Contrast measurement, sharpness analysis, focus direction
-- ✅ Hybrid: Weighted combination of PDAF and CDAF
+- ✅ Hybrid: Intelligent method selection based on PDAF confidence threshold
+  - **PDAF confidence ≥ 0.4**: Use PDAF-only solution (fast and reliable)
+  - **PDAF confidence < 0.4**: Switch to CDAF-only solution (fallback)
+  - Threshold is configurable (default: 0.4) in `calculate_hybrid_af()`
 - ✅ ROI support for focused analysis
+
+**Hybrid AF Decision Logic:**
+The system evaluates PDAF confidence to determine which method to use:
+- High PDAF confidence (≥0.4): PDAF is reliable, use it exclusively for fast focusing
+- Low PDAF confidence (<0.4): PDAF is unreliable, fallback to CDAF for accuracy
+- This approach avoids blending unreliable PDAF data with CDAF, ensuring robust performance
 
 ### 3. Core AF System (`autofocus_system.py`)
 
@@ -245,8 +248,9 @@ CDAF Results:
   Confidence: 0.300
 
 Hybrid AF Results:
+  Method used: CDAF_ONLY (PDAF confidence < 0.4)
   Defocus: 0.000
-  Confidence: 0.150
+  Confidence: 0.300
   Direction: IN_FOCUS
 ```
 
@@ -266,9 +270,12 @@ Hybrid AF Results:
 ### 🔄 Processing Pipeline
 
 ```
-Raw Data → Unpack → Split → Calculate → Combine → Results
-   ↓         ↓        ↓         ↓          ↓         ↓
-RAW10 → uint16 → L/R PD → PDAF/CDAF → Hybrid → Focus
+Raw Data → Unpack → Split → Calculate → Select Method → Results
+   ↓         ↓        ↓         ↓            ↓            ↓
+RAW10 → uint16 → L/R PD → PDAF/CDAF → Confidence Check → Focus
+                                              ↓
+                                    PDAF ≥ 0.4? → PDAF-only
+                                    PDAF < 0.4? → CDAF-only
 ```
 
 ## 🎛️ Configuration
@@ -304,10 +311,9 @@ config = AFConfig(
     cdaf_max_steps=50,
     cdaf_contrast_threshold=0.05,
     
-    # Hybrid weights
-    hybrid_pdaf_weight=0.6,
-    hybrid_cdaf_weight=0.3,
-    hybrid_ldaf_weight=0.1
+    # Hybrid AF threshold (in autofocus_processor.py)
+    # PDAF confidence >= 0.4: Use PDAF-only
+    # PDAF confidence < 0.4: Use CDAF-only
 )
 ```
 
@@ -328,7 +334,7 @@ config = AFConfig(
 
 - **PDAF Accuracy**: Sub-pixel disparity estimation
 - **CDAF Sensitivity**: Laplacian variance measurement  
-- **Hybrid Robustness**: Weighted combination of methods
+- **Hybrid Robustness**: Confidence-based method selection (threshold: 0.4)
 - **ROI Efficiency**: Focused analysis on relevant regions
 
 ## 🔧 Advanced Usage
@@ -350,10 +356,27 @@ results = processor.calculate_hybrid_af(
 )
 ```
 
+### Hybrid AF Method Selection
+
+The hybrid AF system uses a confidence-based threshold approach:
+
+```python
+# Hybrid AF automatically selects the best method:
+results = processor.calculate_hybrid_af(left_pd, right_pd, bayer_image, roi)
+
+# Method selection logic:
+# - If PDAF confidence >= 0.4: Use PDAF-only (fast, hardware-assisted)
+# - If PDAF confidence < 0.4: Use CDAF-only (accurate fallback)
+
+print(f"Method used: {results['method_used']}")  # "PDAF_ONLY" or "CDAF_ONLY"
+print(f"Defocus: {results['hybrid_defocus']:.3f}")
+print(f"Confidence: {results['hybrid_confidence']:.3f}")
+```
+
 ### Calibration Integration
 
 ```python
-from af_calibration import PDAFCalibrator
+from utils.af_calibration import PDAFCalibrator
 
 calibrator = PDAFCalibrator(config)
 calibration_data = {
@@ -368,7 +391,7 @@ processor = AutofocusProcessor(calibration_data)
 ### Visualization
 
 ```python
-from af_visualization import visualize_pdaf_results
+from utils.af_visualization import visualize_pdaf_results
 
 visualize_pdaf_results(
     left_pd, right_pd, disparity_map,
@@ -384,10 +407,17 @@ This implementation demonstrates:
 2. **RAW10 Format Handling**: Efficient unpacking and processing
 3. **Phase Detection Theory**: PD pixel splitting and disparity calculation
 4. **Contrast Detection**: Image sharpness and focus quality metrics
-5. **Hybrid Systems**: Combining multiple AF methods intelligently
+5. **Hybrid Systems**: Confidence-based method selection for optimal performance
 6. **Mobile Camera Architecture**: Modern smartphone focusing systems
 
 ## 🚀 Running Examples
+
+**Important**: Activate the virtual environment first:
+```bash
+source ../virtual_env/bin/activate
+```
+
+Then run any of the examples:
 
 ```bash
 # Complete system example
@@ -409,12 +439,15 @@ python utils/af_calibration.py
 python utils/af_visualization.py
 ```
 
+**Or use the demo runner script** (automatically activates virtual environment):
+```bash
+./run_demo.sh
+```
+
 ## 📚 Documentation
 
-- **`docs/CLEAN_SYSTEM_README.md`**: Detailed clean system documentation
-- **`docs/INSTALL.md`**: Installation and setup guide
-- **`docs/HELP.md`**: Troubleshooting and help
-- **`docs/SETUP_GUIDE.md`**: Detailed setup instructions
+- **`README.md`**: This file - comprehensive system documentation
+- **`examples/example_usage.py`**: Well-commented example code demonstrating all features with detailed explanations
 
 ## 🔄 System Integration
 

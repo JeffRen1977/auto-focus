@@ -3,7 +3,7 @@
 # Autofocus System Setup Script
 # =============================
 # This script installs dependencies into an existing virtual environment
-# located in the parent directory (../virutal_ven)
+# located in the parent directory (../virtual_env)
 
 set -e  # Exit on any error
 
@@ -52,13 +52,15 @@ echo "🔍 Verifying installation..."
 python -c "
 import numpy as np
 import cv2
+import matplotlib
 import matplotlib.pyplot as plt
+import scipy
 from scipy import signal
 print('✅ All dependencies installed successfully!')
 print(f'   NumPy version: {np.__version__}')
 print(f'   OpenCV version: {cv2.__version__}')
-print(f'   Matplotlib available: {plt.__version__}')
-print(f'   SciPy available: {signal.__version__}')
+print(f'   Matplotlib version: {matplotlib.__version__}')
+print(f'   SciPy version: {scipy.__version__}')
 "
 
 echo ""
@@ -72,8 +74,9 @@ echo "   deactivate"
 echo ""
 echo "To run the autofocus system:"
 echo "   source ../virtual_env/bin/activate"
-echo "   python autofocus_system.py"
-echo "   python simple_example.py"
-echo "   python af_calibration.py"
-echo "   python af_visualization.py"
+echo "   python examples/example_usage.py"
+echo "   python examples/quick_start.py"
+echo "   python utils/af_calibration.py"
+echo "   python utils/af_visualization.py"
+echo "   python autofocus_processor.py"
 echo ""

@@ -2,15 +2,74 @@
 Comprehensive Autofocus System Implementation
 =============================================
 
-This module implements a complete autofocus system that demonstrates:
+This module implements a complete autofocus system that demonstrates modern
+mobile camera focusing techniques. It provides a comprehensive framework for
+autofocus algorithms used in smartphone cameras and computational photography.
+
+Key Components:
 1. PDAF (Phase Detection Auto Focus) - Fast, hardware-assisted focusing
+   - Uses dedicated phase detection pixels on the sensor
+   - Calculates horizontal disparity between left/right views
+   - Provides fast initial focus positioning
+   - Block Matching Algorithm (BMA) with Sum of Absolute Differences (SAD)
+
 2. CDAF (Contrast Detection Auto Focus) - Accurate but slower focusing
+   - Measures image sharpness using Laplacian variance
+   - Analyzes contrast trends to determine focus direction
+   - Provides accurate fine-tuning after initial positioning
+   - Iterative search for maximum contrast
+
 3. LDAF (Laser Detection Auto Focus) - Distance-based focusing
+   - Uses laser time-of-flight or structured light measurements
+   - Directly converts distance to lens position
+   - Very fast but limited range and accuracy
+   - Useful for initial positioning in good conditions
+
 4. Hybrid AF - Intelligent combination of all methods
+   - Weighted fusion of PDAF, CDAF, and LDAF results
+   - Confidence-based method selection
+   - Temporal filtering for smooth convergence
+   - Optimal performance across different scenarios
+
 5. ROI Selection - Smart area selection for focusing
+   - Priority-based selection: touch > face > saliency > center
+   - Improves speed and accuracy by focusing on relevant regions
+   - Supports multiple selection methods
+
 6. Temporal Filtering - Smooth convergence and stability
+   - Exponential moving average to prevent focus hunting
+   - Reduces oscillations and jitter
+   - Ensures stable, smooth focus transitions
+
+Architecture:
+The system uses a state machine approach with iterative refinement:
+- IDLE: System ready, waiting for trigger
+- SEARCHING: Actively searching for focus
+- CONVERGED: Focus achieved, within tolerance
+- FAILED: Maximum iterations reached without convergence
+- HUNTING: Oscillating around focus point (not converged)
 
 Based on AF system architecture and mobile computational photography principles.
+
+Usage Example:
+    from autofocus_system import AutoFocusSystem, AFConfig, AFMethod
+    
+    config = AFConfig(
+        pdaf_min_confidence=0.6,
+        cdaf_step_size=20,
+        max_iterations=15
+    )
+    
+    af_system = AutoFocusSystem(config)
+    result = af_system.trigger_autofocus(
+        image=bayer_image,
+        left_pd=left_pd,
+        right_pd=right_pd,
+        method=AFMethod.HYBRID
+    )
+    
+    if result.success:
+        move_lens_to(result.final_position)
 """
 
 import numpy as np
@@ -22,7 +81,27 @@ import cv2
 
 
 class AFMethod(Enum):
-    """Autofocus methods"""
+    """
+    Autofocus method enumeration.
+    
+    Defines the available autofocus methods that can be used:
+    
+    - PDAF: Phase Detection Auto Focus
+      Fast, hardware-assisted method using dedicated PD pixels.
+      Best for: Initial positioning, good lighting, textured scenes.
+      
+    - CDAF: Contrast Detection Auto Focus
+      Accurate method using image contrast/sharpness.
+      Best for: Fine-tuning, low-light, low-contrast scenes.
+      
+    - LDAF: Laser Detection Auto Focus
+      Distance-based method using laser ranging.
+      Best for: Initial positioning, good conditions, close subjects.
+      
+    - HYBRID: Combined approach
+      Intelligently combines all available methods.
+      Best for: Production use, optimal performance across scenarios.
+    """
     PDAF = "pdaf"      # Phase Detection Auto Focus
     CDAF = "cdaf"      # Contrast Detection Auto Focus
     LDAF = "ldaf"      # Laser Detection Auto Focus
@@ -40,7 +119,81 @@ class AFState(Enum):
 
 @dataclass
 class AFConfig:
-    """Autofocus system configuration"""
+    """
+    Autofocus system configuration parameters.
+    
+    This dataclass contains all tunable parameters for the autofocus system.
+    Adjust these values based on your sensor characteristics, lens properties,
+    and performance requirements.
+    
+    PDAF Parameters:
+        pdaf_block_size: Size of blocks for block matching (default: 8)
+            - Larger blocks: More robust but less accurate
+            - Smaller blocks: More accurate but more sensitive to noise
+            - Typical range: 4-16 pixels
+            
+        pdaf_search_range: Horizontal search range for block matching (default: 16)
+            - Maximum disparity to search in pixels
+            - Larger range: Handles larger defocus but slower
+            - Typical range: 8-32 pixels
+            
+        pdaf_min_confidence: Minimum confidence threshold for PDAF (default: 0.6)
+            - Results below this are considered unreliable
+            - Range: 0.0-1.0
+            - Higher: More conservative, fewer false positives
+            
+        pdaf_convergence_threshold: Defocus threshold for convergence (default: 0.5)
+            - If defocus < threshold, consider converged
+            - Smaller: More precise but may oscillate
+            - Units: Focus steps
+    
+    CDAF Parameters:
+        cdaf_step_size: Step size for lens movement in CDAF (default: 20)
+            - Larger steps: Faster but may overshoot
+            - Smaller steps: More precise but slower
+            - Units: Focus steps
+            
+        cdaf_max_steps: Maximum steps for CDAF search (default: 50)
+            - Prevents infinite search
+            - Adjust based on lens range
+            
+        cdaf_contrast_threshold: Minimum contrast change for significance (default: 0.05)
+            - Relative contrast change threshold
+            - Smaller: More sensitive to small changes
+    
+    LDAF Parameters:
+        ldaf_confidence_threshold: Minimum LDAF confidence (default: 0.8)
+            - LDAF results below this are ignored
+            - Range: 0.0-1.0
+            
+        ldaf_distance_range: Valid distance range in meters (default: (0.1, 10.0))
+            - Distances outside this range are rejected
+            - Adjust based on sensor capabilities
+    
+    Hybrid Parameters:
+        hybrid_pdaf_weight: Weight for PDAF in hybrid fusion (default: 0.6)
+        hybrid_cdaf_weight: Weight for CDAF in hybrid fusion (default: 0.3)
+        hybrid_ldaf_weight: Weight for LDAF in hybrid fusion (default: 0.1)
+            - Weights should sum to approximately 1.0
+            - Higher PDAF weight: Faster initial positioning
+            - Higher CDAF weight: More accurate fine-tuning
+    
+    General Parameters:
+        max_iterations: Maximum AF iterations before giving up (default: 15)
+            - Prevents infinite loops
+            - Typical: 10-20 iterations
+            
+        temporal_alpha: Temporal filtering coefficient (default: 0.7)
+            - Range: 0.0-1.0
+            - Higher: More smoothing, slower response
+            - Lower: Faster response, more jitter
+            - Formula: filtered = alpha * new + (1-alpha) * old
+            
+        roi_size: Default ROI size in pixels (default: (200, 200))
+            - (width, height) tuple
+            - Larger: More robust but slower
+            - Smaller: Faster but less robust
+    """
     # PDAF parameters
     pdaf_block_size: int = 8
     pdaf_search_range: int = 16
@@ -92,26 +245,99 @@ class AFResult:
 
 class ROISelector:
     """
-    ROI (Region of Interest) Selector
-    Intelligently selects the best area for focusing
+    ROI (Region of Interest) Selector.
+    
+    Intelligently selects the best area of the image for focusing.
+    ROI selection is critical for autofocus performance because:
+    - Focusing on the subject (not background) improves accuracy
+    - Smaller ROI reduces computation time
+    - User intent (touch point) should be prioritized
+    - Face detection provides automatic subject selection
+    
+    Selection Priority (highest to lowest):
+    1. User Touch Point: User explicitly selected area (highest priority)
+    2. Face Detection: Automatically focus on detected faces
+    3. Saliency-Based: Find visually interesting regions (edges, texture)
+    4. Center-Weighted: Default to center region (fallback)
+    
+    Each method has a confidence score indicating how reliable the selection is.
     """
     
     def __init__(self, config: AFConfig):
+        """
+        Initialize ROI selector with configuration.
+        
+        Args:
+            config: AFConfig object containing ROI parameters
+        """
         self.config = config
     
     def select_roi(self, image: np.ndarray, 
                    touch_point: Optional[Tuple[int, int]] = None,
                    faces: Optional[List[Tuple[int, int, int, int]]] = None) -> ROIData:
         """
-        Select the best ROI for autofocus
+        Select the best ROI for autofocus using priority-based selection.
+        
+        This method implements a hierarchical selection strategy that prioritizes
+        user intent and subject detection over default behavior.
+        
+        Selection Strategy:
+        1. Touch Point (Priority 1):
+           - If user touched screen, center ROI on touch point
+           - Confidence: 1.0 (highest, user explicitly selected)
+           - ROI size: Uses default from config
+        
+        2. Face Detection (Priority 2):
+           - If faces detected, use largest face
+           - Expand face region by expand_ratio (default 2.0x)
+           - Confidence: 0.9 (high, but not as high as user selection)
+           - ROI size: Based on face size
+        
+        3. Saliency-Based (Priority 3):
+           - Find region with highest edge density
+           - Uses Sobel operator to detect edges
+           - Confidence: 0.0-0.8 (based on edge density)
+           - ROI size: Uses default from config
+        
+        4. Center-Weighted (Priority 4):
+           - Default fallback: center of image
+           - Confidence: 0.5 (lowest, generic selection)
+           - ROI size: Uses default from config
         
         Args:
-            image: Input image
-            touch_point: User touch point (x, y)
-            faces: Detected faces [(x, y, w, h), ...]
+            image: Input image as numpy array
+                   - Can be grayscale or color
+                   - Used for saliency calculation if needed
             
+            touch_point: User touch point (x, y) in pixels (optional)
+                        - Highest priority if provided
+                        - ROI centers on this point
+            
+            faces: List of detected faces (optional)
+                  - Format: [(x, y, width, height), ...]
+                  - Second priority if provided
+                  - Uses largest face if multiple detected
+        
         Returns:
-            ROIData: Selected ROI information
+            ROIData object containing:
+            - x, y: Top-left corner of ROI in pixels
+            - width, height: ROI dimensions in pixels
+            - confidence: Selection confidence (0.0-1.0)
+            - method: Selection method used ('touch', 'face', 'saliency', 'center')
+        
+        ROI Expansion:
+        For face detection, the ROI is expanded around the face to include
+        context. This ensures the focus includes the face and surrounding area,
+        not just the face itself.
+        
+        Example:
+            # User touched screen at (300, 200)
+            roi = selector.select_roi(image, touch_point=(300, 200))
+            # ROI centers on (300, 200), method='touch', confidence=1.0
+            
+            # Face detected at (100, 150, 80, 100)
+            roi = selector.select_roi(image, faces=[(100, 150, 80, 100)])
+            # ROI expands around face, method='face', confidence=0.9
         """
         h, w = image.shape[:2]
         roi_w, roi_h = self.config.roi_size
@@ -182,15 +408,63 @@ class ROISelector:
 
 class PDAFProcessor:
     """
-    Phase Detection Auto Focus Processor
-    Fast focusing using phase difference information
+    Phase Detection Auto Focus (PDAF) Processor.
+    
+    PDAF is a fast, hardware-assisted autofocus method that uses dedicated
+    phase detection pixels on the image sensor. These pixels are arranged
+    in a pattern (typically 2x1 column blocks) that captures light from
+    different angles, creating left and right views.
+    
+    How PDAF Works:
+    1. Sensor has dedicated PD pixels arranged in left/right pattern
+    2. Left and right PD images are extracted from the sensor
+    3. Block Matching Algorithm (BMA) finds corresponding blocks
+    4. Horizontal disparity (shift) between views is calculated
+    5. Disparity is converted to defocus (lens movement needed)
+    6. Lens is moved to correct focus position
+    
+    Advantages:
+    - Very fast (typically < 200ms)
+    - Hardware-assisted (dedicated pixels)
+    - Works well in good lighting
+    - Provides direction and magnitude of defocus
+    
+    Limitations:
+    - Requires good contrast and texture
+    - Limited by PD pixel coverage
+    - May fail in low-light or low-contrast scenes
+    - Needs calibration for accurate defocus conversion
+    
+    Algorithm:
+    - Block Matching Algorithm (BMA) with Sum of Absolute Differences (SAD)
+    - Normalized blocks for illumination invariance
+    - Robust statistics (median + weighted average) for outlier rejection
+    - Sub-pixel accuracy through integer search
+    
+    Calibration:
+    The disparity-to-defocus conversion requires calibration:
+    defocus = disparity * slope + offset
+    
+    These parameters are typically determined through:
+    - Lens characterization tests
+    - Known distance measurements
+    - Factory calibration procedures
     """
     
     def __init__(self, config: AFConfig):
+        """
+        Initialize PDAF processor with configuration.
+        
+        Args:
+            config: AFConfig object containing PDAF parameters
+        """
         self.config = config
+        
         # Calibration parameters (would be loaded from device calibration)
-        self.disparity_to_defocus_slope = 25.0
-        self.disparity_to_defocus_offset = -2.0
+        # These convert pixel disparity to lens movement steps
+        # In production, these would come from factory calibration data
+        self.disparity_to_defocus_slope = 25.0   # Conversion factor
+        self.disparity_to_defocus_offset = -2.0   # Offset adjustment
         self.pdaf_confidence_threshold = config.pdaf_min_confidence
     
     def process_pdaf(self, left_pd: np.ndarray, right_pd: np.ndarray, 
@@ -225,7 +499,43 @@ class PDAFProcessor:
     
     def _compute_disparity_bma(self, left_image: np.ndarray, 
                               right_image: np.ndarray) -> Dict:
-        """Block Matching Algorithm for disparity computation"""
+        """
+        Compute disparity using Block Matching Algorithm (BMA).
+        
+        This is the core PDAF algorithm that finds the horizontal shift
+        between left and right PD images. The algorithm:
+        1. Divides images into blocks (typically 8x8 pixels)
+        2. For each block in left image, searches for best match in right image
+        3. Computes horizontal disparity (shift) for each block
+        4. Uses robust statistics to combine block disparities
+        5. Filters outliers using median-based approach
+        
+        Args:
+            left_image: Left PD image as uint16 numpy array
+            right_image: Right PD image as uint16 numpy array
+            Both should have the same dimensions
+        
+        Returns:
+            Dictionary containing:
+            - 'disparity': Final disparity estimate in pixels (float)
+              - Positive: Right image shifted right (subject behind focus)
+              - Negative: Right image shifted left (subject in front of focus)
+              - Zero: Images aligned (in focus)
+            - 'confidence': Confidence score 0.0-1.0 (float)
+            - 'valid_blocks': Number of valid block matches (int)
+        
+        Algorithm Details:
+            - Block size: Configurable (default 8x8 pixels)
+            - Search range: ±search_range pixels horizontally
+            - Matching metric: Sum of Absolute Differences (SAD)
+            - Normalization: Blocks are normalized for illumination invariance
+            - Outlier rejection: Uses median ± 2.0 pixels threshold
+            - Final estimate: Weighted average of valid blocks (weighted by confidence)
+        
+        Performance:
+            - Time complexity: O(blocks * search_range)
+            - Typical: ~200ms for 756x2016 PD images with 8x8 blocks
+        """
         block_size = self.config.pdaf_block_size
         search_range = self.config.pdaf_search_range
         
@@ -281,7 +591,48 @@ class PDAFProcessor:
     
     def _match_block(self, left_block: np.ndarray, right_image: np.ndarray,
                     position: Tuple[int, int], search_range: int) -> Tuple[float, float]:
-        """Match a single block using SAD (Sum of Absolute Differences)"""
+        """
+        Match a single block between left and right images using SAD.
+        
+        This function searches for the best matching position of a left block
+        in the right image by computing Sum of Absolute Differences (SAD)
+        at each candidate position. The position with minimum SAD is the best match.
+        
+        Args:
+            left_block: Block from left image, shape (block_h, block_w)
+            right_image: Right image to search in, shape (height, width)
+            position: (y, x) position of the block in left image
+            search_range: Maximum horizontal search range in pixels
+        
+        Returns:
+            Tuple of (best_disparity, confidence):
+            - best_disparity: Horizontal shift in pixels (float)
+              - Positive: Right block is to the right (subject behind focus)
+              - Negative: Right block is to the left (subject in front of focus)
+            - confidence: Match quality 0.0-1.0 (float)
+              - Higher confidence = better match quality
+              - Based on SAD cost relative to maximum possible cost
+        
+        Algorithm:
+            1. Normalize left block (zero mean, unit variance)
+            2. For each candidate disparity d in [-search_range, search_range]:
+               a. Extract corresponding block from right image at (x + d, y)
+               b. Normalize right block
+               c. Compute SAD = sum(|left_block - right_block|)
+               d. Track minimum SAD and corresponding disparity
+            3. Calculate confidence from SAD value
+            4. Return best disparity and confidence
+        
+        Normalization:
+            Blocks are normalized to (mean=0, std=1) to make matching
+            illumination-invariant. This is critical for robust matching
+            under varying lighting conditions.
+        
+        Confidence Calculation:
+            confidence = 1.0 - (best_sad / (block_size * 255.0))
+            - Lower SAD = higher confidence
+            - Normalized by maximum possible SAD (all pixels differ by 255)
+        """
         y_pos, x_pos = position
         block_h, block_w = left_block.shape
         
@@ -324,14 +675,62 @@ class PDAFProcessor:
 
 class CDAFProcessor:
     """
-    Contrast Detection Auto Focus Processor
-    Accurate but slower focusing method
+    Contrast Detection Auto Focus (CDAF) Processor.
+    
+    CDAF is an accurate autofocus method that measures image sharpness
+    by analyzing contrast. It works by:
+    1. Extracting region of interest (ROI) from the image
+    2. Applying Laplacian filter to detect edges (sharp transitions)
+    3. Computing variance of Laplacian as contrast metric
+    4. Tracking contrast changes as lens position changes
+    5. Finding the lens position with maximum contrast (sharpest image)
+    
+    How CDAF Works:
+    - Sharp images have more edges (high-frequency content)
+    - Laplacian operator detects edges by finding second derivatives
+    - Variance of Laplacian measures edge density and strength
+    - Higher variance = more edges = sharper image = better focus
+    - The algorithm searches for the peak contrast position
+    
+    Advantages:
+    - Very accurate (can achieve precise focus)
+    - Works with any image content (no special pixels needed)
+    - Reliable in various lighting conditions
+    - Good for fine-tuning after initial positioning
+    
+    Limitations:
+    - Slower than PDAF (requires multiple lens movements)
+    - May "hunt" if contrast is low
+    - Requires iterative search (hill-climbing)
+    - Can be affected by noise in low-light
+    
+    Algorithm:
+    - Laplacian variance method for contrast measurement
+    - Trend analysis to determine focus direction
+    - Adaptive step sizing based on contrast trends
+    - History tracking to prevent oscillations
+    
+    Search Strategy:
+    - Initial: Large steps to find approximate focus
+    - Improving: Continue in same direction
+    - Getting worse: Reverse direction with smaller steps
+    - Oscillating: Reduce step size for fine-tuning
     """
     
     def __init__(self, config: AFConfig):
+        """
+        Initialize CDAF processor with configuration.
+        
+        Args:
+            config: AFConfig object containing CDAF parameters
+        """
         self.config = config
-        self.contrast_history = []
-        self.position_history = []
+        
+        # History tracking for trend analysis
+        # These lists store contrast and position values over time
+        # Used to determine if focus is improving, getting worse, or oscillating
+        self.contrast_history = []  # List of contrast values
+        self.position_history = []  # List of corresponding lens positions
     
     def process_cdaf(self, image: np.ndarray, roi: ROIData, 
                     current_position: float, step_size: int) -> Dict:
@@ -391,7 +790,58 @@ class CDAFProcessor:
         }
     
     def _calculate_contrast(self, image: np.ndarray) -> float:
-        """Calculate image contrast using Laplacian variance"""
+        """
+        Calculate image contrast using Laplacian variance method.
+        
+        This is the standard metric for measuring image sharpness in CDAF.
+        The method works by:
+        1. Applying Laplacian operator to detect edges
+        2. Computing variance of the Laplacian response
+        3. Higher variance = more edges = sharper image
+        
+        Laplacian Operator:
+        The Laplacian is the second derivative operator:
+        L = ∂²I/∂x² + ∂²I/∂y²
+        
+        It responds strongly to edges and sharp transitions, and weakly
+        to smooth regions. A sharp image has many strong edges, resulting
+        in high variance of the Laplacian response.
+        
+        Args:
+            image: Input image as numpy array
+                   - Can be grayscale (2D) or color (3D)
+                   - If color, converted to grayscale first
+                   - Data type: uint8, uint16, or float
+        
+        Returns:
+            Contrast value as float
+            - Higher values indicate sharper images
+            - Typical range: thousands to hundreds of thousands
+            - Depends on image content, resolution, and lighting
+            - Values are relative, not absolute
+        
+        Formula:
+            laplacian = cv2.Laplacian(image, cv2.CV_64F)
+            contrast = np.var(laplacian)
+        
+        Why Variance?
+        - Mean of Laplacian is near zero (equal positive/negative responses)
+        - Variance captures the spread of edge strengths
+        - Sharp images have large variance (many strong edges)
+        - Blurry images have small variance (few weak edges)
+        
+        Alternative Metrics:
+        - Gradient magnitude variance
+        - High-frequency energy (FFT)
+        - Tenengrad (sum of squared gradients)
+        - Brenner gradient
+        
+        Laplacian variance is preferred because:
+        - Computationally efficient
+        - Good discrimination between sharp/blurry
+        - Robust to illumination changes
+        - Standard in many autofocus systems
+        """
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
@@ -479,27 +929,94 @@ class LDAFProcessor:
 
 class AutoFocusSystem:
     """
-    Main Autofocus System Controller
-    Coordinates PDAF, CDAF, and LDAF for optimal focusing
+    Main Autofocus System Controller.
+    
+    This is the top-level class that coordinates all autofocus methods
+    (PDAF, CDAF, LDAF) to achieve optimal focusing performance. It implements
+    a state machine that manages the autofocus process from trigger to convergence.
+    
+    System Architecture:
+    The system uses an iterative refinement approach:
+    1. Select Region of Interest (ROI) for focusing
+    2. Process available AF methods (PDAF, CDAF, LDAF)
+    3. Combine results using weighted fusion (for HYBRID mode)
+    4. Decide on lens movement direction and magnitude
+    5. Apply temporal filtering for smooth convergence
+    6. Update lens position
+    7. Check for convergence
+    8. Repeat until converged or max iterations reached
+    
+    State Machine:
+    - IDLE: System ready, waiting for autofocus trigger
+    - SEARCHING: Actively searching for optimal focus position
+    - CONVERGED: Focus achieved, within tolerance threshold
+    - FAILED: Maximum iterations reached without convergence
+    - HUNTING: Oscillating around focus point (not converged)
+    
+    Method Selection:
+    - PDAF_ONLY: Use only PDAF (fast, when PDAF is reliable)
+    - CDAF_ONLY: Use only CDAF (accurate, when PDAF fails)
+    - LDAF_ONLY: Use only LDAF (very fast, when available)
+    - HYBRID: Combine all available methods (optimal performance)
+    
+    Temporal Filtering:
+    Uses exponential moving average to smooth lens movements:
+    filtered_movement = alpha * new_movement + (1-alpha) * previous_movement
+    
+    This prevents:
+    - Focus hunting (oscillations around focus point)
+    - Jittery movements
+    - Overcorrection
+    
+    Convergence Criteria:
+    - Movement magnitude < convergence_threshold
+    - All methods agree on focus position
+    - Confidence above minimum threshold
+    
+    Usage:
+        config = AFConfig()
+        af_system = AutoFocusSystem(config)
+        result = af_system.trigger_autofocus(
+            image=bayer_image,
+            left_pd=left_pd,
+            right_pd=right_pd,
+            method=AFMethod.HYBRID
+        )
     """
     
     def __init__(self, config: AFConfig):
+        """
+        Initialize the autofocus system.
+        
+        Args:
+            config: AFConfig object containing all system parameters
+        """
         self.config = config
+        
+        # State machine state
         self.state = AFState.IDLE
+        
+        # Lens position tracking
+        # Lens positions typically range from 0-1023 (10-bit control)
         self.current_position = 512.0  # Default middle position
-        self.target_position = 512.0
+        self.target_position = 512.0    # Target position after filtering
+        
+        # Iteration counter
         self.iteration_count = 0
         
-        # Initialize processors
-        self.roi_selector = ROISelector(config)
-        self.pdaf_processor = PDAFProcessor(config)
-        self.cdaf_processor = CDAFProcessor(config)
-        self.ldaf_processor = LDAFProcessor(config)
+        # Initialize specialized processors
+        self.roi_selector = ROISelector(config)      # ROI selection
+        self.pdaf_processor = PDAFProcessor(config)   # Phase detection
+        self.cdaf_processor = CDAFProcessor(config)   # Contrast detection
+        self.ldaf_processor = LDAFProcessor(config)    # Laser detection
         
-        # State tracking
-        self.last_pdaf_result = None
-        self.last_cdaf_result = None
-        self.last_ldaf_result = None
+        # State tracking for each method
+        # These store the most recent results from each AF method
+        self.last_pdaf_result = None   # Latest PDAF result
+        self.last_cdaf_result = None   # Latest CDAF result
+        self.last_ldaf_result = None   # Latest LDAF result
+        
+        # Convergence history for analysis
         self.convergence_history = []
     
     def trigger_autofocus(self, 
@@ -512,20 +1029,98 @@ class AutoFocusSystem:
                          faces: Optional[List[Tuple[int, int, int, int]]] = None,
                          method: AFMethod = AFMethod.HYBRID) -> AFResult:
         """
-        Trigger autofocus process
+        Trigger the autofocus process.
+        
+        This is the main entry point for autofocus. It runs an iterative
+        search algorithm that refines the lens position until optimal
+        focus is achieved or maximum iterations are reached.
+        
+        Process Flow:
+        1. Initialize state (SEARCHING)
+        2. Select ROI (region of interest) for focusing
+        3. Iterative refinement loop:
+           a. Process available AF methods (PDAF, CDAF, LDAF)
+           b. Combine results to decide on lens movement
+           c. Apply temporal filtering for smooth convergence
+           d. Update lens position
+           e. Check for convergence
+           f. Repeat until converged or max iterations
+        4. Return final result
         
         Args:
-            image: Input image
-            left_pd: Left PDAF pixels (optional)
-            right_pd: Right PDAF pixels (optional)
-            ldaf_distance: LDAF distance measurement (optional)
-            ldaf_confidence: LDAF confidence
-            touch_point: User touch point (optional)
-            faces: Detected faces (optional)
-            method: AF method to use
+            image: Input image as numpy array (Bayer or RGB)
+                   - Used for CDAF calculations
+                   - Used for ROI selection
+                   - Shape: (height, width) or (height, width, channels)
             
+            left_pd: Left PD image (optional, required for PDAF)
+                     - Shape: (height, width/2) typically
+                     - uint16 numpy array
+                     - Must be provided with right_pd for PDAF
+            
+            right_pd: Right PD image (optional, required for PDAF)
+                     - Shape: (height, width/2) typically
+                     - uint16 numpy array
+                     - Must be provided with left_pd for PDAF
+            
+            ldaf_distance: LDAF distance measurement in meters (optional)
+                          - Required for LDAF method
+                          - Typical range: 0.1-10.0 meters
+                          - Measured using time-of-flight or structured light
+            
+            ldaf_confidence: LDAF measurement confidence (default: 1.0)
+                           - Range: 0.0-1.0
+                           - Higher = more reliable measurement
+            
+            touch_point: User touch point (x, y) in pixels (optional)
+                        - Highest priority for ROI selection
+                        - If provided, ROI centers on this point
+            
+            faces: List of detected faces (optional)
+                  - Format: [(x, y, width, height), ...]
+                  - Second priority for ROI selection
+                  - Largest face is used if multiple detected
+            
+            method: AF method to use (default: HYBRID)
+                   - AFMethod.PDAF: Use only PDAF
+                   - AFMethod.CDAF: Use only CDAF
+                   - AFMethod.LDAF: Use only LDAF
+                   - AFMethod.HYBRID: Combine all available methods
+        
         Returns:
-            AFResult: Autofocus result
+            AFResult object containing:
+            - success: bool - Whether focus was achieved
+            - final_position: float - Final lens position (0-1023)
+            - iterations: int - Number of iterations performed
+            - method_used: AFMethod - Which method was used
+            - confidence: float - Overall confidence (0.0-1.0)
+            - convergence_time: float - Time taken in seconds
+            - residual_error: float - Remaining focus error
+        
+        Convergence:
+        The algorithm converges when:
+        - Movement magnitude < convergence_threshold
+        - All methods agree on focus position
+        - Confidence is above minimum threshold
+        
+        Temporal Filtering:
+        Lens movements are smoothed using exponential moving average:
+        filtered = alpha * new + (1-alpha) * previous
+        
+        This prevents oscillations and ensures smooth convergence.
+        
+        Example:
+            result = af_system.trigger_autofocus(
+                image=bayer_image,
+                left_pd=left_pd,
+                right_pd=right_pd,
+                method=AFMethod.HYBRID
+            )
+            
+            if result.success:
+                print(f"Focused at position {result.final_position}")
+                print(f"Took {result.iterations} iterations")
+                print(f"Confidence: {result.confidence:.2f}")
         """
         import time
         start_time = time.time()
@@ -611,7 +1206,51 @@ class AutoFocusSystem:
         return result
     
     def _decide_movement(self, method: AFMethod) -> Optional[float]:
-        """Decide on next lens movement based on available data"""
+        """
+        Decide on next lens movement based on available AF method data.
+        
+        This is the core decision-making function that combines results
+        from different AF methods to determine the optimal lens movement.
+        
+        Decision Logic:
+        1. Collect movements from all available methods
+        2. Filter by confidence thresholds
+        3. Weight movements by method confidence and hybrid weights
+        4. Compute weighted average of movements
+        5. Check for convergence (movement < threshold)
+        
+        Args:
+            method: AFMethod enum specifying which methods to use
+        
+        Returns:
+            Lens movement in focus steps (float), or None if converged
+            - Positive: Move lens forward (increase position)
+            - Negative: Move lens backward (decrease position)
+            - Near zero: Consider converged (return None)
+            - None: Focus converged, no movement needed
+        
+        Movement Sources:
+        - PDAF: defocus estimate (direct conversion from disparity)
+        - CDAF: suggested_movement (based on contrast trend)
+        - LDAF: position difference (target_position - current_position)
+        
+        Weighting:
+        For HYBRID mode, movements are weighted by:
+        - Method confidence (0.0-1.0): How reliable is this method's result?
+        - Hybrid weight (from config): How much should we trust this method?
+        - Final weight = method_confidence * hybrid_weight
+        
+        Convergence Check:
+        If |final_movement| < convergence_threshold:
+            Return None (converged)
+        Otherwise:
+            Return final_movement (continue searching)
+        
+        Example:
+            # PDAF suggests +10 steps, confidence 0.8, weight 0.6
+            # CDAF suggests +5 steps, confidence 0.6, weight 0.3
+            # Final: (10*0.8*0.6 + 5*0.6*0.3) / (0.8*0.6 + 0.6*0.3) = 8.3 steps
+        """
         movements = []
         confidences = []
         
