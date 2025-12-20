@@ -29,7 +29,7 @@ PD sensors use a 2x1 column blocks pattern:
 - This creates two views for phase difference calculation
 
 Usage:
-    from raw_data_reader import read_pd_raw, read_bayer_raw
+    from data_processing.raw_reader import read_pd_raw, read_bayer_raw
     
     left_pd, right_pd = read_pd_raw("data/pd.raw", 4032, 756, 5056)
     bayer_image = read_bayer_raw("data/bayer.raw", 4032, 3024, 5120)

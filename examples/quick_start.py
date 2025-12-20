@@ -57,7 +57,7 @@ def quick_test():
     
     try:
         # Import the autofocus system
-        from autofocus_system import (
+        from core import (
             AutoFocusSystem, AFConfig, AFMethod,
             create_test_image, create_test_pd_data
         )
@@ -164,8 +164,8 @@ Examples:
 Available Demo Scripts:
     python examples/example_usage.py         # Complete usage examples
     python examples/quick_start.py          # Quick validation (this script)
-    python utils/af_calibration.py         # Calibration demo
-    python utils/af_visualization.py        # Visualization demo
+    python advanced/calibration.py         # Calibration demo
+    python advanced/visualization.py        # Visualization demo
     python autofocus_processor.py           # Main processor demo
 
 Setup:
@@ -202,8 +202,8 @@ def main():
     if success:
         print("\n🎯 Next Steps:")
         print("   1. Run complete example: python examples/example_usage.py")
-        print("   2. Try calibration tools: python utils/af_calibration.py")
-        print("   3. View visualizations: python utils/af_visualization.py")
+        print("   2. Try calibration tools: python advanced/calibration.py")
+        print("   3. View visualizations: python advanced/visualization.py")
         print("   4. Run main processor: python autofocus_processor.py")
         print("\n📖 Read README.md for detailed documentation")
     else:

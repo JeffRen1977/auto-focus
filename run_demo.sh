@@ -56,8 +56,8 @@ while true; do
     echo "Available Demos:"
     echo "1. Complete Autofocus Example (examples/example_usage.py)"
     echo "2. Quick Start Validation (examples/quick_start.py)"
-    echo "3. Calibration and Testing (utils/af_calibration.py)"
-    echo "4. Visualization Tools (utils/af_visualization.py)"
+    echo "3. Calibration and Testing (advanced/calibration.py)"
+    echo "4. Visualization Tools (advanced/visualization.py)"
     echo "5. Run All Demos"
     echo "6. Exit"
     echo ""
@@ -71,18 +71,18 @@ while true; do
             run_demo "examples/quick_start.py" "Quick Start Validation"
             ;;
         3)
-            run_demo "utils/af_calibration.py" "Calibration and Testing Demo"
+            run_demo "advanced/calibration.py" "Calibration and Testing Demo"
             ;;
         4)
-            run_demo "utils/af_visualization.py" "Visualization Demo"
+            run_demo "advanced/visualization.py" "Visualization Demo"
             ;;
         5)
             echo "Running all demos in sequence..."
             echo ""
             run_demo "examples/example_usage.py" "Complete Autofocus Example"
             run_demo "examples/quick_start.py" "Quick Start Validation"
-            run_demo "utils/af_calibration.py" "Calibration and Testing Demo"
-            run_demo "utils/af_visualization.py" "Visualization Demo"
+            run_demo "advanced/calibration.py" "Calibration and Testing Demo"
+            run_demo "advanced/visualization.py" "Visualization Demo"
             echo "🎉 All demos completed!"
             break
             ;;

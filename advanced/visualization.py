@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from typing import List, Tuple, Dict, Optional
-from autofocus_system import create_test_image, create_test_pd_data, PDAFProcessor, CDAFProcessor, AFConfig
+from core import create_test_image, create_test_pd_data, PDAFProcessor, CDAFProcessor, AFConfig
 
 
 def visualize_pdaf_disparity(left_pd: np.ndarray, right_pd: np.ndarray, 
@@ -55,7 +55,7 @@ def visualize_pdaf_disparity(left_pd: np.ndarray, right_pd: np.ndarray,
     roi_x = (w - roi_size) // 2
     roi_y = (h - roi_size) // 2
     
-    from autofocus_system import ROIData
+    from core import ROIData
     roi = ROIData(roi_x, roi_y, roi_size, roi_size, 1.0, 'center')
     
     # Process PDAF
@@ -176,7 +176,7 @@ def visualize_cdaf_contrast_curve(image: np.ndarray,
     roi_x = (w - roi_size) // 2
     roi_y = (h - roi_size) // 2
     
-    from autofocus_system import ROIData
+    from core import ROIData
     roi = ROIData(roi_x, roi_y, roi_size, roi_size, 1.0, 'center')
     
     # Simulate different blur levels (representing different lens positions)

@@ -32,20 +32,34 @@ Output:
 
 ## 📁 File Structure
 
+The codebase is organized for clear learning progression in the book chapter:
+
 ```
 Autofocus/
-├── 📄 Core System Files
-│   ├── raw_data_reader.py          # RAW10 data reading and processing
-│   ├── autofocus_processor.py      # Main AF processing pipeline
-│   └── autofocus_system.py         # Core AF algorithms (PDAF, CDAF, LDAF)
+├── 📚 Core Autofocus System (core/)
+│   ├── __init__.py                 # Package exports
+│   ├── config.py                   # Configuration classes and enums
+│   ├── roi_selection.py            # Region of Interest selection
+│   ├── pdaf.py                     # Phase Detection Auto Focus
+│   ├── cdaf.py                     # Contrast Detection Auto Focus
+│   ├── ldaf.py                     # Laser Detection Auto Focus
+│   └── autofocus_system.py         # Main system integration
+│
+├── 📥 Data Processing (data_processing/)
+│   ├── __init__.py                 # Package exports
+│   └── raw_reader.py               # RAW10 format reading and PD splitting
+│
+├── 📄 Main Interface Files
+│   └── autofocus_processor.py      # High-level processing pipeline
 │
 ├── 📁 examples/
-│   ├── example_usage.py            # Comprehensive usage examples with detailed comments
+│   ├── example_usage.py            # Complete end-to-end example
 │   └── quick_start.py              # Quick validation script
 │
-├── 🔧 utils/
-│   ├── af_calibration.py           # PDAF calibration and testing
-│   └── af_visualization.py         # Visualization tools
+├── 🔬 Advanced Topics (advanced/)
+│   ├── __init__.py                 # Package exports
+│   ├── calibration.py              # PDAF calibration and testing
+│   └── visualization.py            # Visualization tools
 │
 ├── 📊 data/
 │   ├── *.raw                       # RAW10 PD and Bayer images
@@ -57,6 +71,46 @@ Autofocus/
 │   ├── setup.sh                    # Setup script (macOS/Linux)
 │   └── run_demo.sh                 # Demo runner script
 ```
+
+### Learning Path
+
+For studying the autofocus system in the book chapter, follow this progression:
+
+1. **Start with Configuration** (`core/config.py`)
+   - Understand system parameters and data structures
+   - Learn about AFMethod, AFState, AFConfig, ROIData, AFResult
+
+2. **Learn ROI Selection** (`core/roi_selection.py`)
+   - Understand how the system selects focus regions
+   - Priority-based selection (touch > face > saliency > center)
+
+3. **Study PDAF** (`core/pdaf.py`)
+   - Fast hardware-assisted focusing
+   - Block Matching Algorithm (BMA)
+   - Disparity calculation and defocus conversion
+
+4. **Study CDAF** (`core/cdaf.py`)
+   - Accurate contrast-based focusing
+   - Laplacian variance method
+   - Trend analysis and iterative search
+
+5. **Study LDAF** (`core/ldaf.py`) - Optional
+   - Distance-based focusing
+   - Laser ranging conversion
+
+6. **Understand System Integration** (`core/autofocus_system.py`)
+   - How all components work together
+   - State machine and iterative refinement
+   - Hybrid AF decision-making
+
+7. **Process Real Data** (`data_processing/raw_reader.py`)
+   - RAW10 format understanding
+   - PD pixel pattern splitting
+   - Bayer image processing
+
+8. **Complete Examples** (`examples/example_usage.py`)
+   - End-to-end processing pipeline
+   - Real sensor data processing
 
 ## 🚀 Quick Start
 
@@ -92,8 +146,13 @@ This will:
 ### 3. Individual Component Usage
 
 ```python
-from raw_data_reader import read_pd_raw, read_bayer_raw
+# New modular imports (recommended)
+from data_processing.raw_reader import read_pd_raw, read_bayer_raw
 from autofocus_processor import AutofocusProcessor
+from core import AFConfig, AutoFocusSystem, AFMethod
+
+# Or use backward-compatible imports
+from core import AFConfig, AutoFocusSystem, AFMethod
 
 # Read raw sensor data
 left_pd, right_pd = read_pd_raw(
@@ -125,7 +184,7 @@ print(f"Confidence: {results['hybrid_confidence']:.3f}")
 Handles real sensor data processing:
 
 ```python
-from raw_data_reader import read_pd_raw, read_bayer_raw, unpack_raw10
+from data_processing.raw_reader import read_pd_raw, read_bayer_raw, unpack_raw10
 
 # Efficient RAW10 unpacking using optimized algorithm
 def unpack_raw10(data: bytes, width: int, height: int, stride: int) -> np.ndarray:
@@ -188,7 +247,7 @@ The system evaluates PDAF confidence to determine which method to use:
 Advanced autofocus algorithms:
 
 ```python
-from autofocus_system import AutoFocusSystem, AFConfig, AFMethod
+from core import AutoFocusSystem, AFConfig, AFMethod
 
 config = AFConfig(
     pdaf_min_confidence=0.6,
@@ -298,7 +357,7 @@ roi = (1500, 1000, 1000, 1000)  # x, y, width, height
 ### AF Configuration
 
 ```python
-from autofocus_system import AFConfig
+from core import AFConfig
 
 config = AFConfig(
     # PDAF parameters
@@ -433,10 +492,10 @@ python autofocus_processor.py
 python examples/quick_start.py
 
 # Calibration and testing
-python utils/af_calibration.py
+python advanced/calibration.py
 
 # Visualization tools
-python utils/af_visualization.py
+python advanced/visualization.py
 ```
 
 **Or use the demo runner script** (automatically activates virtual environment):

@@ -28,8 +28,8 @@ from pathlib import Path
 from typing import Tuple, Dict, Any, Optional
 import cv2
 
-from autofocus_system import AFConfig, PDAFProcessor, CDAFProcessor, ROISelector, ROIData
-from raw_data_reader import read_pd_raw, read_bayer_raw, demosaic_bayer
+from core import AFConfig, PDAFProcessor, CDAFProcessor, ROISelector, ROIData
+from data_processing.raw_reader import read_pd_raw, read_bayer_raw, demosaic_bayer
 
 
 class AutofocusProcessor:

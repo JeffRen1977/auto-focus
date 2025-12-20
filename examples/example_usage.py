@@ -22,7 +22,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import core autofocus processing classes and functions
 from autofocus_processor import AutofocusProcessor
-from raw_data_reader import read_pd_raw, read_bayer_raw, save_image_8bit
+from data_processing.raw_reader import read_pd_raw, read_bayer_raw, save_image_8bit
 
 
 def main():

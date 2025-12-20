@@ -15,7 +15,7 @@ import cv2
 from typing import List, Tuple, Dict, Optional
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
-from autofocus_system import AutoFocusSystem, AFConfig, AFMethod, ROIData
+from core import AutoFocusSystem, AFConfig, AFMethod, ROIData
 
 
 @dataclass
@@ -312,7 +312,7 @@ class AFPerformanceTester:
     
     def _create_test_data(self, scenario: Dict) -> Dict:
         """Create test data for a scenario"""
-        from autofocus_system import create_test_image, create_test_pd_data
+        from core import create_test_image, create_test_pd_data
         
         # Create test image with specified blur
         blur_radius = scenario.get('blur_radius', 2.0)
@@ -530,7 +530,7 @@ def run_comprehensive_af_test():
 
 if __name__ == "__main__":
     # Import test functions
-    from autofocus_system import create_test_image, create_test_pd_data
+    from core import create_test_image, create_test_pd_data
     
     # Run comprehensive test
     results = run_comprehensive_af_test()
