@@ -240,3 +240,9 @@ class LDAFProcessor:
         closest_distance = min(distances, key=lambda x: abs(x - distance))
         return self.distance_to_position_table[closest_distance]
 
+
+
+
+
+
+

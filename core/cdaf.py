@@ -301,3 +301,9 @@ class CDAFProcessor:
         self.contrast_history = []
         self.position_history = []
 
+
+
+
+
+
+
