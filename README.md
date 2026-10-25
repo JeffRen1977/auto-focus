@@ -145,7 +145,14 @@ This will:
 - ✅ Generate hybrid autofocus results
 - ✅ Save processed images with proper contrast
 
-### 3. Individual Component Usage
+### 3. Run Unit Tests
+
+```bash
+source ../virtual_env/bin/activate
+python3 -m pytest tests/ -v
+```
+
+### 4. Individual Component Usage
 
 ```python
 # New modular imports (recommended)
