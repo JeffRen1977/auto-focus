@@ -1,5 +1,7 @@
 # Autofocus System for Mobile Computational Photography
 
+**This code accompanies Chapter 5 of "Mobile Computational Photography".** See [CHAPTER_5.md](CHAPTER_5.md) for the full chapter mapping and learning objectives.
+
 A comprehensive autofocus system implementation that demonstrates modern mobile camera focusing techniques using PDAF (Phase Detection Auto Focus) and CDAF (Contrast Detection Auto Focus) with real sensor data processing.
 
 ## 🎯 Overview
@@ -179,7 +181,7 @@ print(f"Confidence: {results['hybrid_confidence']:.3f}")
 
 ## 🔧 Core Components
 
-### 1. Raw Data Reader (`raw_data_reader.py`)
+### 1. Raw Data Reader (`data_processing/raw_reader.py`)
 
 Handles real sensor data processing:
 
@@ -483,7 +485,7 @@ Then run any of the examples:
 python examples/example_usage.py
 
 # Raw data reader only
-python raw_data_reader.py
+python data_processing/raw_reader.py
 
 # Autofocus processor only
 python autofocus_processor.py
